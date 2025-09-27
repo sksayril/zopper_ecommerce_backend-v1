@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zopper E-commerce API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .nav {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .nav ul {
+            list-style: none;
+        }
+        
+        .nav li {
+            margin: 8px 0;
+        }
+        
+        .nav a {
+            color: #333;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav a:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .section {
+            background: white;
+            margin-bottom: 30px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .post { background-color: #28a745; color: white; }
+        .get { background-color: #007bff; color: white; }
+        
+        .url {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .status-code {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .status-200 { background-color: #d4edda; color: #155724; }
+        .status-201 { background-color: #d1ecf1; color: #0c5460; }
+        .status-400 { background-color: #f8d7da; color: #721c24; }
+        .status-401 { background-color: #fff3cd; color: #856404; }
+        .status-404 { background-color: #f8d7da; color: #721c24; }
+        .status-409 { background-color: #f8d7da; color: #721c24; }
+        .status-500 { background-color: #f8d7da; color: #721c24; }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Zopper E-commerce API</h1>
+            <p>Complete User Authentication API Documentation</p>
+        </div>
+        
+        <div class="nav">
+            <h2>📋 Quick Navigation</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#authentication">Authentication Endpoints</a></li>
+                <li><a href="#utility">Utility Endpoints</a></li>
+                <li><a href="#testing">Testing Guide</a></li>
+                <li><a href="#errors">Error Handling</a></li>
+            </ul>
+        </div>
+        
+        <div class="section" id="overview">
+            <h2>📖 Overview</h2>
+            <p>This is a complete User Authentication API for an E-commerce project using session-based authentication with Express.js, MongoDB Atlas, and bcrypt.</p>
+            
+            <div class="highlight">
+                <strong>Base URL:</strong> <code>http://localhost:5000/api</code><br>
+                <strong>Authentication:</strong> Session-based (no JWT)<br>
+                <strong>Database:</strong> MongoDB Atlas<br>
+                <strong>Password Hashing:</strong> bcrypt
+            </div>
+        </div>
+        
+        <div class="section" id="authentication">
+            <h2>🔐 Authentication Endpoints</h2>
+            
+            <div class="endpoint">
+                <h3><span class="method post">POST</span><span class="url">/api/auth/register</span></h3>
+                <p><strong>Description:</strong> Register a new user account</p>
+                
+                <h4>Request Body:</h4>
+                <div class="code-block">
+{
+  "name": "John Doe",
+  "email": "john@example.com", 
+  "password": "password123"
+}
+                </div>
+                
+                <h4>Response:</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer",
+      "createdAt": "2023-09-06T10:30:00.000Z"
+    }
+  }
+}
+                </div>
+                
+                <h4>Status Codes:</h4>
+                <p><span class="status-code status-201">201</span> User created successfully</p>
+                <p><span class="status-code status-400">400</span> Validation error</p>
+                <p><span class="status-code status-409">409</span> Email already exists</p>
+            </div>
+            
+            <div class="endpoint">
+                <h3><span class="method post">POST</span><span class="url">/api/auth/login</span></h3>
+                <p><strong>Description:</strong> Authenticate user and create session</p>
+                
+                <h4>Request Body:</h4>
+                <div class="code-block">
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+                </div>
+                
+                <h4>Response:</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer"
+    }
+  }
+}
+                </div>
+                
+                <h4>Status Codes:</h4>
+                <p><span class="status-code status-200">200</span> Login successful</p>
+                <p><span class="status-code status-401">401</span> Invalid credentials</p>
+            </div>
+            
+            <div class="endpoint">
+                <h3><span class="method post">POST</span><span class="url">/api/auth/logout</span></h3>
+                <p><strong>Description:</strong> Destroy user session and logout</p>
+                <p><strong>Headers:</strong> <code>Cookie: connect.sid=&lt;session-id&gt;</code></p>
+                
+                <h4>Response:</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "Logout successful"
+}
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <h3><span class="method get">GET</span><span class="url">/api/auth/me</span></h3>
+                <p><strong>Description:</strong> Get logged-in user's profile information</p>
+                <p><strong>Headers:</strong> <code>Cookie: connect.sid=&lt;session-id&gt;</code></p>
+                
+                <h4>Response:</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "User profile retrieved successfully",
+  "data": {
+    "user": {
+      "id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "customer",
+      "isActive": true,
+      "createdAt": "2023-09-06T10:30:00.000Z",
+      "updatedAt": "2023-09-06T10:30:00.000Z"
+    }
+  }
+}
+                </div>
+            </div>
+            
+            <div class="endpoint">
+                <h3><span class="method get">GET</span><span class="url">/api/auth/session</span></h3>
+                <p><strong>Description:</strong> Check if user is currently logged in</p>
+                
+                <h4>Response (Logged In):</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "User is logged in",
+  "data": {
+    "isLoggedIn": true,
+    "userId": "64f8a1b2c3d4e5f6a7b8c9d0",
+    "role": "customer",
+    "email": "john@example.com"
+  }
+}
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="utility">
+            <h2>🛠️ Utility Endpoints</h2>
+            
+            <div class="endpoint">
+                <h3><span class="method get">GET</span><span class="url">/api/health</span></h3>
+                <p><strong>Description:</strong> Check server status and connectivity</p>
+                
+                <h4>Response:</h4>
+                <div class="code-block">
+{
+  "success": true,
+  "message": "Server is running",
+  "timestamp": "2023-09-06T10:30:00.000Z",
+  "environment": "development"
+}
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="testing">
+            <h2>🧪 Testing Guide</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Using cURL</h3>
+                    <h4>1. Register User:</h4>
+                    <div class="code-block">
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"password123"}'
+                    </div>
+                    
+                    <h4>2. Login User:</h4>
+                    <div class="code-block">
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password123"}' \
+  -c cookies.txt
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Using Test Script</h3>
+                    <div class="code-block">
+# Run the automated test script
+node test-api.js
+                    </div>
+                    
+                    <h3>Using Postman</h3>
+                    <ul>
+                        <li>Set Base URL: <code>http://localhost:5000/api</code></li>
+                        <li>Enable cookie jar for session management</li>
+                        <li>Use JSON format for request bodies</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="errors">
+            <h2>❌ Error Handling</h2>
+            
+            <p>All errors follow this consistent format:</p>
+            <div class="code-block">
+{
+  "success": false,
+  "message": "Human-readable error message",
+  "error": "Error type or technical details"
+}
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Common Error Types</h3>
+                    <p><span class="status-code status-400">400</span> Bad Request - Validation errors</p>
+                    <p><span class="status-code status-401">401</span> Unauthorized - Authentication required</p>
+                    <p><span class="status-code status-404">404</span> Not Found - Route not found</p>
+                    <p><span class="status-code status-409">409</span> Conflict - Email already exists</p>
+                    <p><span class="status-code status-500">500</span> Server Error - Internal server error</p>
+                </div>
+                
+                <div class="card">
+                    <h3>Session Management</h3>
+                    <ul>
+                        <li>HttpOnly cookies prevent XSS attacks</li>
+                        <li>Secure cookies in production</li>
+                        <li>Session expiration: 24 hours</li>
+                        <li>Automatic cleanup on logout</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🚀 Quick Start</h2>
+            <div class="code-block">
+# 1. Install dependencies
+npm install
+
+# 2. Start the server
+npm start
+
+# 3. Test the API
+node test-api.js
+            </div>
+            
+            <div class="highlight">
+                <strong>Note:</strong> Make sure to set up your MongoDB Atlas connection string in the config.js file before starting the server.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
