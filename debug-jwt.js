@@ -42,3 +42,4 @@ if (!process.env.JWT_SECRET) {
 } else {
   console.log('- JWT_SECRET is properly configured');
 }
+
