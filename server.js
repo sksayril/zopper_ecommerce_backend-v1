@@ -112,8 +112,9 @@ app.get('/', (req, res) => {
         createProduct: 'POST /api/admin/products',
         getProducts: 'GET /api/admin/products',
         getProduct: 'GET /api/admin/products/:id',
-        updateProduct: 'PUT /api/admin/products/:id',
-        deleteProduct: 'DELETE /api/admin/products/:id'
+        updateProduct: 'POST /api/admin/products/:id',
+        deleteProduct: 'DELETE /api/admin/products/:id',
+        assignProductsToVendor: 'POST /api/admin/products/assign-vendor'
       },
       subcategories: {
         getSubcategories: 'GET /api/subcategories',

@@ -65,6 +65,12 @@ const productSchema = new mongoose.Schema({
     ref: 'Category',
     required: [true, 'Subcategory ID is required']
   },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: false,
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -99,6 +105,7 @@ productSchema.index({ mrp: 1 });
 productSchema.index({ srp: 1 });
 productSchema.index({ categoryId: 1 });
 productSchema.index({ subcategoryId: 1 });
+productSchema.index({ vendorId: 1 });
 productSchema.index({ createdAt: -1 });
 
 // Virtual for profit margin calculation

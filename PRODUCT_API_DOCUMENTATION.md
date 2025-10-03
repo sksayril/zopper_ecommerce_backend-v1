@@ -309,7 +309,7 @@ curl -X GET http://localhost:5000/api/admin/products/68d65bc5c1a0ff45303b7b7e \
 
 ### 4. Update Product
 
-**Endpoint:** `PUT /api/admin/products/:id`
+**Endpoint:** `POST /api/admin/products/:id`
 
 **Description:** Admin updates product details
 
@@ -375,7 +375,7 @@ Content-Type: application/json
 
 **cURL Example:**
 ```bash
-curl -X PUT http://localhost:5000/api/admin/products/68d65bc5c1a0ff45303b7b7e \
+curl -X POST http://localhost:5000/api/admin/products/68d65bc5c1a0ff45303b7b7e \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
   -d '{
@@ -420,6 +420,168 @@ Authorization: Bearer YOUR_JWT_TOKEN_HERE
 ```bash
 curl -X DELETE http://localhost:5000/api/admin/products/68d65bc5c1a0ff45303b7b7e \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+### 5. Assign Multiple Products to Vendor
+
+**Endpoint:** `POST /api/admin/products/assign-vendor`
+
+**Description:** Admin assigns multiple products to a vendor at once
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "vendorId": "68d65bc5c1a0ff45303b7b7e",
+  "productIds": [
+    "68d65bc5c1a0ff45303b7b7f",
+    "68d65bc5c1a0ff45303b7b80",
+    "68d65bc5c1a0ff45303b7b81"
+  ]
+}
+```
+
+**Request Body Fields:**
+- `vendorId` (required): Vendor ObjectId (24 characters)
+- `productIds` (required): Array of Product ObjectIds (minimum 1 product)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Products assigned to vendor successfully",
+  "data": {
+    "vendor": {
+      "id": "68d65bc5c1a0ff45303b7b7e",
+      "name": "John's Electronics Store",
+      "shopName": "John Electronics",
+      "email": "john@electronics.com"
+    },
+    "assignedProducts": [
+      {
+        "id": "68d65bc5c1a0ff45303b7b7f",
+        "title": "iPhone 15 Pro Max",
+        "vendorId": {
+          "id": "68d65bc5c1a0ff45303b7b7e",
+          "name": "John's Electronics Store",
+          "shopName": "John Electronics",
+          "email": "john@electronics.com"
+        },
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      },
+      {
+        "id": "68d65bc5c1a0ff45303b7b80",
+        "title": "Samsung Galaxy S24 Ultra",
+        "vendorId": {
+          "id": "68d65bc5c1a0ff45303b7b7e",
+          "name": "John's Electronics Store",
+          "shopName": "John Electronics",
+          "email": "john@electronics.com"
+        },
+        "updatedAt": "2024-01-15T10:30:00.000Z"
+      }
+    ],
+    "summary": {
+      "totalProducts": 3,
+      "updatedCount": 3,
+      "vendorId": "68d65bc5c1a0ff45303b7b7e"
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X POST http://localhost:5000/api/admin/products/assign-vendor \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "vendorId": "68d65bc5c1a0ff45303b7b7e",
+    "productIds": [
+      "68d65bc5c1a0ff45303b7b7f",
+      "68d65bc5c1a0ff45303b7b80",
+      "68d65bc5c1a0ff45303b7b81"
+    ]
+  }'
+```
+
+**Error Responses:**
+
+**400 - Missing Required Fields:**
+```json
+{
+  "success": false,
+  "message": "vendorId and productIds array are required",
+  "error": "Missing required fields"
+}
+```
+
+**400 - Invalid Vendor ID:**
+```json
+{
+  "success": false,
+  "message": "Invalid vendor ID format",
+  "error": "Vendor ID must be a 24 character hex string"
+}
+```
+
+**400 - Empty Product IDs Array:**
+```json
+{
+  "success": false,
+  "message": "At least one product ID is required",
+  "error": "Empty product IDs array"
+}
+```
+
+**400 - Invalid Product ID:**
+```json
+{
+  "success": false,
+  "message": "Invalid product ID format in array",
+  "error": "Product ID 68d65bc5c1a0ff45303b7b7x must be a 24 character hex string"
+}
+```
+
+**404 - Vendor Not Found:**
+```json
+{
+  "success": false,
+  "message": "Vendor not found",
+  "error": "Vendor does not exist"
+}
+```
+
+**404 - Products Not Found:**
+```json
+{
+  "success": false,
+  "message": "One or more products not found",
+  "error": "Invalid product IDs: 68d65bc5c1a0ff45303b7b7x, 68d65bc5c1a0ff45303b7b7y"
+}
+```
+
+**401 - Unauthorized:**
+```json
+{
+  "success": false,
+  "message": "Access denied. No token provided.",
+  "error": "Token required"
+}
+```
+
+**403 - Forbidden:**
+```json
+{
+  "success": false,
+  "message": "Access denied. Admin privileges required.",
+  "error": "Insufficient permissions"
+}
 ```
 
 ## Error Responses
@@ -519,7 +681,7 @@ curl -X GET "http://localhost:5000/api/admin/products?page=1&limit=10" \
 
 4. **Update Product:**
 ```bash
-curl -X PUT http://localhost:5000/api/admin/products/PRODUCT_ID \
+curl -X POST http://localhost:5000/api/admin/products/PRODUCT_ID \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -528,7 +690,18 @@ curl -X PUT http://localhost:5000/api/admin/products/PRODUCT_ID \
   }'
 ```
 
-5. **Delete Product:**
+5. **Assign Multiple Products to Vendor:**
+```bash
+curl -X POST http://localhost:5000/api/admin/products/assign-vendor \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "vendorId": "VENDOR_ID",
+    "productIds": ["PRODUCT_ID_1", "PRODUCT_ID_2", "PRODUCT_ID_3"]
+  }'
+```
+
+6. **Delete Product:**
 ```bash
 curl -X DELETE http://localhost:5000/api/admin/products/PRODUCT_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"

@@ -2,9 +2,129 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Vendor = require('../models/Vendor');
 const { verifyAdminToken } = require('../middleware/adminAuth');
 
 const router = express.Router();
+
+// @route   POST /api/admin/products/assign-vendor
+// @desc    Admin assigns multiple products to a vendor
+// @access  Private (Admin only)
+router.post('/assign-vendor', verifyAdminToken, async (req, res) => {
+  try {
+    const { vendorId, productIds } = req.body;
+
+    // Validate input
+    if (!vendorId || !productIds || !Array.isArray(productIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'vendorId and productIds array are required',
+        error: 'Missing required fields'
+      });
+    }
+
+    // Debug logging
+    console.log('Received vendorId:', vendorId, 'Type:', typeof vendorId);
+    console.log('Received productIds:', productIds);
+
+    // Validate vendorId format
+    if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vendor ID format',
+        error: `Vendor ID "${vendorId}" must be a 24 character hex string`
+      });
+    }
+
+    // Validate productIds array
+    if (productIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one product ID is required',
+        error: 'Empty product IDs array'
+      });
+    }
+
+    // Validate all productIds format
+    for (let i = 0; i < productIds.length; i++) {
+      const productId = productIds[i];
+      console.log(`Validating productId[${i}]:`, productId, 'Type:', typeof productId);
+      
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid product ID format in array',
+          error: `Product ID "${productId}" at index ${i} must be a 24 character hex string`
+        });
+      }
+    }
+
+    // Check if vendor exists
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vendor not found',
+        error: 'Vendor does not exist'
+      });
+    }
+
+    // Check if all products exist
+    const existingProducts = await Product.find({ _id: { $in: productIds } });
+    if (existingProducts.length !== productIds.length) {
+      const existingIds = existingProducts.map(p => p._id.toString());
+      const invalidIds = productIds.filter(id => !existingIds.includes(id));
+      return res.status(404).json({
+        success: false,
+        message: 'One or more products not found',
+        error: `Invalid product IDs: ${invalidIds.join(', ')}`
+      });
+    }
+
+    // Update all products with vendorId
+    const updateResult = await Product.updateMany(
+      { _id: { $in: productIds } },
+      { vendorId: vendorId }
+    );
+
+    // Get updated products with vendor info
+    const updatedProducts = await Product.find({ _id: { $in: productIds } })
+      .populate('vendorId', 'name shopName email')
+      .select('_id title vendorId updatedAt');
+
+    res.json({
+      success: true,
+      message: 'Products assigned to vendor successfully',
+      data: {
+        vendor: {
+          id: vendor._id,
+          name: vendor.name,
+          shopName: vendor.shopName,
+          email: vendor.email
+        },
+        assignedProducts: updatedProducts.map(product => ({
+          id: product._id,
+          title: product.title,
+          vendorId: product.vendorId,
+          updatedAt: product.updatedAt
+        })),
+        summary: {
+          totalProducts: productIds.length,
+          updatedCount: updateResult.modifiedCount,
+          vendorId: vendorId
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Assign products to vendor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while assigning products to vendor',
+      error: 'Product assignment failed'
+    });
+  }
+});
 
 // @route   POST /api/admin/products
 // @desc    Admin creates a new product
@@ -341,10 +461,10 @@ router.get('/:id', verifyAdminToken, async (req, res) => {
   }
 });
 
-// @route   PUT /api/admin/products/:id
+// @route   POST /api/admin/products/:id
 // @desc    Admin updates product details
 // @access  Private (Admin only)
-router.put('/:id', verifyAdminToken, async (req, res) => {
+router.post('/:id', verifyAdminToken, async (req, res) => {
   try {
     // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
