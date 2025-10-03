@@ -24,12 +24,32 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Validate password length
-    if (password.length < 6) {
+    // Sanitize and validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long',
-        error: 'Password validation failed'
+        message: 'Please provide a valid email address',
+        error: 'Invalid email format'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin password must be at least 8 characters long',
+        error: 'Password too short'
+      });
+    }
+
+    // Additional password strength validation for admin
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin password must contain at least one lowercase letter, one uppercase letter, and one number',
+        error: 'Password strength insufficient'
       });
     }
 
@@ -135,7 +155,17 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate JWT token
-    const token = generateAdminToken(admin);
+    let token;
+    try {
+      token = generateAdminToken(admin);
+    } catch (error) {
+      console.error('Token generation error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to generate authentication token',
+        error: 'Token generation failed'
+      });
+    }
 
     res.json({
       success: true,

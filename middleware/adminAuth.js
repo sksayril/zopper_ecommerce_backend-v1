@@ -3,14 +3,20 @@ const Admin = require('../models/Admin');
 
 // Generate JWT token for admin
 const generateAdminToken = (admin) => {
+  const jwtSecret = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
+  
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  
   return jwt.sign(
     {
       id: admin._id,
       email: admin.email,
       role: admin.role
     },
-    process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '1h' }
+    jwtSecret,
+    { expiresIn: '24h' } // Extended to 24 hours for better user experience
   );
 };
 
@@ -27,7 +33,7 @@ const verifyAdminToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key-for-development');
     
     // Verify admin still exists and is active
     const admin = await Admin.findById(decoded.id);
@@ -80,7 +86,7 @@ const verifyAdminTokenOptional = async (req, res, next) => {
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-key-for-development');
     
     const admin = await Admin.findById(decoded.id);
     if (admin && admin.isActive) {

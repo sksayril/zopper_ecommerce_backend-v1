@@ -550,7 +550,7 @@ Admin gets specific category details.
 
 **Endpoint:** `GET /api/admin/category/:id`
 
-**Headers:**
+**Headers:**                              
 ```
 Authorization: Bearer <jwt-token>
 ```

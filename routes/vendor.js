@@ -28,6 +28,35 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Sanitize and validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address',
+        error: 'Invalid email format'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+        error: 'Password too short'
+      });
+    }
+
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid phone number',
+        error: 'Invalid phone format'
+      });
+    }
+
     // Validate address object
     const { street, city, state, zipCode, country } = address;
     if (!street || !city || !state || !zipCode || !country) {

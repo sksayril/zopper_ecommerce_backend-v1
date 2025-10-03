@@ -1,7 +1,12 @@
+// Load environment variables first
+require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const cors = require('cors');
+// const helmet = require('helmet');
+// const rateLimit = require('express-rate-limit');
 const config = require('./config');
 
 // Import routes
@@ -14,10 +19,7 @@ const subcategoryRoutes = require('./routes/subcategories');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -109,10 +111,10 @@ app.get('/', (req, res) => {
         deleteSubcategory: 'POST /api/admin/subcategory/:id/delete',
         getCategorySubcategories: 'GET /api/admin/category/:id/subcategories',
         verify: 'GET /api/admin/verify',
-        createProduct: 'POST /api/admin/products',
+        createProduct: 'POST /api/admin/products (with mainImage and additionalImages)',
         getProducts: 'GET /api/admin/products',
         getProduct: 'GET /api/admin/products/:id',
-        updateProduct: 'PUT /api/admin/products/:id',
+        updateProduct: 'PUT /api/admin/products/:id (supports image updates)',
         deleteProduct: 'DELETE /api/admin/products/:id'
       },
       subcategories: {
@@ -137,12 +139,25 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((error, req, res, next) => {
-  console.error('Global error handler:', error);
+  // Log error details
+  console.error('Global error handler:', {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    timestamp: new Date().toISOString()
+  });
+  
+  // Don't leak error details in production
+  const isDevelopment = config.NODE_ENV === 'development';
   
   res.status(error.status || 500).json({
     success: false,
-    message: error.message || 'Internal server error',
-    error: config.NODE_ENV === 'development' ? error.stack : 'Something went wrong'
+    message: isDevelopment ? error.message : 'Internal server error',
+    error: isDevelopment ? error.stack : 'Something went wrong',
+    ...(isDevelopment && { timestamp: new Date().toISOString() })
   });
 });
 

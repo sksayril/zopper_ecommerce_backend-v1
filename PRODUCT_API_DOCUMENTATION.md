@@ -30,6 +30,16 @@ Authorization: Bearer YOUR_JWT_TOKEN_HERE
   mrp: Number (required, > 0),
   srp: Number (required, > 0),
   description: String (optional, max 2000 chars),
+  shortDescription: String (optional, max 500 chars),
+  detailedDescription: String (optional, max 5000 chars),
+  features: [String] (optional, max 200 chars each),
+  specifications: [{
+    key: String (required, max 50 chars),
+    value: String (required, max 200 chars)
+  }],
+  highlights: [String] (optional, max 200 chars each),
+  mainImage: String (required, valid image URL - jpg, jpeg, png, gif, webp, svg),
+  additionalImages: [String] (optional, array of valid image URLs),
   categoryId: ObjectId (required, must exist and be active),
   subcategoryId: ObjectId (required, must exist, be active, and belong to category),
   attributes: [{
@@ -82,6 +92,44 @@ Content-Type: application/json
   "mrp": 129999,
   "srp": 119999,
   "description": "Latest iPhone with advanced features",
+  "shortDescription": "Premium smartphone with titanium design",
+  "detailedDescription": "The iPhone 15 Pro Max features a titanium design, A17 Pro chip, and advanced camera system with 5x optical zoom.",
+  "features": [
+    "Titanium design",
+    "A17 Pro chip",
+    "5x optical zoom",
+    "Action Button",
+    "USB-C connectivity"
+  ],
+  "specifications": [
+    {
+      "key": "Display",
+      "value": "6.7-inch Super Retina XDR"
+    },
+    {
+      "key": "Storage",
+      "value": "256GB"
+    },
+    {
+      "key": "Camera",
+      "value": "48MP Main, 12MP Ultra Wide, 12MP Telephoto"
+    },
+    {
+      "key": "Battery",
+      "value": "Up to 29 hours video playback"
+    }
+  ],
+  "highlights": [
+    "Most advanced iPhone",
+    "Titanium construction",
+    "Professional camera system"
+  ],
+  "mainImage": "https://example.com/images/iphone15-pro-max-main.jpg",
+  "additionalImages": [
+    "https://example.com/images/iphone15-pro-max-side.jpg",
+    "https://example.com/images/iphone15-pro-max-back.jpg",
+    "https://example.com/images/iphone15-pro-max-detail.jpg"
+  ],
   "categoryId": "68d635a655a3f58724e487c3",
   "subcategoryId": "68d635a655a3f58724e487c8",
   "attributes": [
@@ -126,6 +174,12 @@ Content-Type: application/json
         "slug": "smartphones",
         "isActive": true
       },
+      "mainImage": "https://example.com/images/iphone15-pro-max-main.jpg",
+      "additionalImages": [
+        "https://example.com/images/iphone15-pro-max-side.jpg",
+        "https://example.com/images/iphone15-pro-max-back.jpg",
+        "https://example.com/images/iphone15-pro-max-detail.jpg"
+      ],
       "attributes": [
         {
           "key": "Color",
@@ -165,6 +219,11 @@ curl -X POST http://localhost:5000/api/admin/products \
     "mrp": 129999,
     "srp": 119999,
     "description": "Latest iPhone with advanced features",
+    "mainImage": "https://example.com/images/iphone15-pro-max-main.jpg",
+    "additionalImages": [
+      "https://example.com/images/iphone15-pro-max-side.jpg",
+      "https://example.com/images/iphone15-pro-max-back.jpg"
+    ],
     "categoryId": "68d635a655a3f58724e487c3",
     "subcategoryId": "68d635a655a3f58724e487c8",
     "attributes": [
@@ -538,6 +597,8 @@ curl -X DELETE http://localhost:5000/api/admin/products/PRODUCT_ID \
 
 - ✅ **JWT Authentication** - All endpoints protected
 - ✅ **Input Validation** - Comprehensive validation for all fields
+- ✅ **Image Management** - Main image (required) and additional images (optional)
+- ✅ **Image URL Validation** - Validates image URLs for supported formats (jpg, jpeg, png, gif, webp, svg)
 - ✅ **Pagination** - Efficient data loading with page/limit
 - ✅ **Search** - Search by title and keywords
 - ✅ **Profit Margin Calculation** - Automatic calculation of profit margin
@@ -551,6 +612,10 @@ curl -X DELETE http://localhost:5000/api/admin/products/PRODUCT_ID \
 
 - All prices are stored as numbers (not strings)
 - SRP cannot be greater than MRP
+- **Main image is required** and must be a valid image URL
+- **Additional images are optional** and can be an array of valid image URLs
+- **Supported image formats**: jpg, jpeg, png, gif, webp, svg
+- **Image URLs must start with http:// or https://**
 - Attributes array can contain multiple key-value pairs
 - Keywords array supports multiple search terms
 - Profit margin is automatically calculated as: `((MRP - SRP) / MRP) * 100`

@@ -215,20 +215,22 @@ router.get('/:id/products', async (req, res) => {
       mrp: product.mrp,
       srp: product.srp,
       description: product.description,
-      category: {
+      category: product.categoryId ? {
         id: product.categoryId._id,
         name: product.categoryId.name,
         slug: product.categoryId.slug,
         isActive: product.categoryId.isActive
-      },
-      subcategory: {
+      } : null,
+      subcategory: product.subcategoryId ? {
         id: product.subcategoryId._id,
         name: product.subcategoryId.name,
         slug: product.subcategoryId.slug,
         isActive: product.subcategoryId.isActive
-      },
+      } : null,
       attributes: product.attributes,
       keywords: product.keywords,
+      productUrl: product.productUrl,
+      vendorSite: product.vendorSite,
       isActive: product.isActive,
       profitMargin: product.profitMargin,
       createdBy: product.createdBy,

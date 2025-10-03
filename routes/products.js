@@ -11,13 +11,13 @@ const router = express.Router();
 // @access  Private (Admin only)
 router.post('/', verifyAdminToken, async (req, res) => {
   try {
-    const { title, mrp, srp, description, categoryId, subcategoryId, attributes, keywords } = req.body;
+    const { title, mrp, srp, description, shortDescription, detailedDescription, features, specifications, highlights, categoryId, subcategoryId, attributes, keywords, mainImage, additionalImages, productUrl, vendorSite } = req.body;
 
     // Validate required fields
-    if (!title || !mrp || !srp || !categoryId || !subcategoryId) {
+    if (!title || !mrp || !srp || !categoryId || !subcategoryId || !mainImage) {
       return res.status(400).json({
         success: false,
-        message: 'Title, MRP, SRP, categoryId, and subcategoryId are required fields',
+        message: 'Title, MRP, SRP, categoryId, subcategoryId, and mainImage are required fields',
         error: 'Missing required fields'
       });
     }
@@ -111,6 +111,77 @@ router.post('/', verifyAdminToken, async (req, res) => {
       });
     }
 
+    // Validate and sanitize main image URL format
+    const imageUrlRegex = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+    if (!imageUrlRegex.test(mainImage)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main image must be a valid image URL (jpg, jpeg, png, gif, webp, svg)',
+        error: 'Invalid main image URL format'
+      });
+    }
+
+    // Additional security: Check for malicious URLs
+    const maliciousPatterns = [
+      /javascript:/i,
+      /data:/i,
+      /vbscript:/i,
+      /onload=/i,
+      /onerror=/i
+    ];
+    
+    if (maliciousPatterns.some(pattern => pattern.test(mainImage))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image URL format',
+        error: 'Potentially malicious URL detected'
+      });
+    }
+
+    // Validate additional images if provided
+    if (additionalImages && Array.isArray(additionalImages)) {
+      // Limit number of additional images
+      if (additionalImages.length > 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 10 additional images allowed',
+          error: 'Too many additional images'
+        });
+      }
+
+      for (const imageUrl of additionalImages) {
+        if (!imageUrlRegex.test(imageUrl)) {
+          return res.status(400).json({
+            success: false,
+            message: 'All additional images must be valid image URLs (jpg, jpeg, png, gif, webp, svg)',
+            error: 'Invalid additional image URL format'
+          });
+        }
+
+        // Check for malicious URLs in additional images
+        if (maliciousPatterns.some(pattern => pattern.test(imageUrl))) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid additional image URL format',
+            error: 'Potentially malicious URL detected in additional images'
+          });
+        }
+      }
+    }
+
+    // Validate specifications format if provided
+    if (specifications && Array.isArray(specifications)) {
+      for (const spec of specifications) {
+        if (!spec.key || !spec.value) {
+          return res.status(400).json({
+            success: false,
+            message: 'Each specification must have both key and value',
+            error: 'Invalid specification format'
+          });
+        }
+      }
+    }
+
     // Validate attributes format if provided
     if (attributes && Array.isArray(attributes)) {
       for (const attr of attributes) {
@@ -124,16 +195,46 @@ router.post('/', verifyAdminToken, async (req, res) => {
       }
     }
 
+    // Validate productUrl if provided
+    if (productUrl) {
+      const urlRegex = /^https?:\/\/.+/;
+      if (!urlRegex.test(productUrl)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product URL must be a valid URL starting with http:// or https://',
+          error: 'Invalid product URL format'
+        });
+      }
+    }
+
+    // Validate vendorSite if provided (now accepts vendor names like Flipkart, Amazon, etc.)
+    if (vendorSite && (vendorSite.length < 2 || vendorSite.length > 100)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vendor site name must be between 2 and 100 characters',
+        error: 'Invalid vendor site name length'
+      });
+    }
+
     // Create new product
     const product = new Product({
       title,
       mrp: parseFloat(mrp),
       srp: parseFloat(srp),
       description: description || '',
+      shortDescription: shortDescription || '',
+      detailedDescription: detailedDescription || '',
+      features: features || [],
+      specifications: specifications || [],
+      highlights: highlights || [],
       categoryId,
       subcategoryId,
+      mainImage,
+      additionalImages: additionalImages || [],
       attributes: attributes || [],
       keywords: keywords || [],
+      productUrl: productUrl || '',
+      vendorSite: vendorSite || '',
       createdBy: {
         id: req.admin.id,
         name: req.admin.name || 'Admin',
@@ -159,20 +260,29 @@ router.post('/', verifyAdminToken, async (req, res) => {
           mrp: product.mrp,
           srp: product.srp,
           description: product.description,
-          category: {
+          category: product.categoryId ? {
             id: product.categoryId._id,
             name: product.categoryId.name,
             slug: product.categoryId.slug,
             isActive: product.categoryId.isActive
-          },
-          subcategory: {
+          } : null,
+          subcategory: product.subcategoryId ? {
             id: product.subcategoryId._id,
             name: product.subcategoryId.name,
             slug: product.subcategoryId.slug,
             isActive: product.subcategoryId.isActive
-          },
+          } : null,
+          mainImage: product.mainImage,
+          additionalImages: product.additionalImages,
+          shortDescription: product.shortDescription,
+          detailedDescription: product.detailedDescription,
+          features: product.features,
+          specifications: product.specifications,
+          highlights: product.highlights,
           attributes: product.attributes,
           keywords: product.keywords,
+          productUrl: product.productUrl,
+          vendorSite: product.vendorSite,
           isActive: product.isActive,
           profitMargin: product.profitMargin,
           createdBy: product.createdBy,
@@ -219,27 +329,36 @@ router.get('/', verifyAdminToken, async (req, res) => {
     // Get total count for pagination
     const totalProducts = await Product.countDocuments(searchQuery);
 
-    // Format response
+    // Format response with null safety
     const formattedProducts = products.map(product => ({
       id: product._id,
       title: product.title,
       mrp: product.mrp,
       srp: product.srp,
       description: product.description,
-      category: {
+      category: product.categoryId ? {
         id: product.categoryId._id,
         name: product.categoryId.name,
         slug: product.categoryId.slug,
         isActive: product.categoryId.isActive
-      },
-      subcategory: {
+      } : null,
+      subcategory: product.subcategoryId ? {
         id: product.subcategoryId._id,
         name: product.subcategoryId.name,
         slug: product.subcategoryId.slug,
         isActive: product.subcategoryId.isActive
-      },
+      } : null,
+      mainImage: product.mainImage,
+      additionalImages: product.additionalImages,
+      shortDescription: product.shortDescription,
+      detailedDescription: product.detailedDescription,
+      features: product.features,
+      specifications: product.specifications,
+      highlights: product.highlights,
       attributes: product.attributes,
       keywords: product.keywords,
+      productUrl: product.productUrl,
+      vendorSite: product.vendorSite,
       isActive: product.isActive,
       profitMargin: product.profitMargin,
       createdBy: product.createdBy,
@@ -308,20 +427,29 @@ router.get('/:id', verifyAdminToken, async (req, res) => {
           mrp: product.mrp,
           srp: product.srp,
           description: product.description,
-          category: {
+          category: product.categoryId ? {
             id: product.categoryId._id,
             name: product.categoryId.name,
             slug: product.categoryId.slug,
             isActive: product.categoryId.isActive
-          },
-          subcategory: {
+          } : null,
+          subcategory: product.subcategoryId ? {
             id: product.subcategoryId._id,
             name: product.subcategoryId.name,
             slug: product.subcategoryId.slug,
             isActive: product.subcategoryId.isActive
-          },
+          } : null,
+          mainImage: product.mainImage,
+          additionalImages: product.additionalImages,
+          shortDescription: product.shortDescription,
+          detailedDescription: product.detailedDescription,
+          features: product.features,
+          specifications: product.specifications,
+          highlights: product.highlights,
           attributes: product.attributes,
           keywords: product.keywords,
+          productUrl: product.productUrl,
+          vendorSite: product.vendorSite,
           isActive: product.isActive,
           profitMargin: product.profitMargin,
           createdBy: product.createdBy,
@@ -355,10 +483,10 @@ router.put('/:id', verifyAdminToken, async (req, res) => {
       });
     }
 
-    const { title, mrp, srp, description, attributes, keywords, isActive } = req.body;
+    const { title, mrp, srp, description, shortDescription, detailedDescription, features, specifications, highlights, attributes, keywords, isActive, mainImage, additionalImages, productUrl, vendorSite } = req.body;
 
     // Validate input
-    if (!title && !mrp && !srp && !description && !attributes && !keywords && isActive === undefined) {
+    if (!title && !mrp && !srp && !description && !shortDescription && !detailedDescription && !features && !specifications && !highlights && !attributes && !keywords && isActive === undefined && !mainImage && !additionalImages && !productUrl && !vendorSite) {
       return res.status(400).json({
         success: false,
         message: 'Please provide at least one field to update',
@@ -392,6 +520,45 @@ router.put('/:id', verifyAdminToken, async (req, res) => {
       });
     }
 
+    // Validate main image URL format if provided
+    if (mainImage) {
+      const imageUrlRegex = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+      if (!imageUrlRegex.test(mainImage)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Main image must be a valid image URL (jpg, jpeg, png, gif, webp, svg)',
+          error: 'Invalid main image URL format'
+        });
+      }
+    }
+
+    // Validate additional images if provided
+    if (additionalImages && Array.isArray(additionalImages)) {
+      const imageUrlRegex = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+      for (const imageUrl of additionalImages) {
+        if (!imageUrlRegex.test(imageUrl)) {
+          return res.status(400).json({
+            success: false,
+            message: 'All additional images must be valid image URLs (jpg, jpeg, png, gif, webp, svg)',
+            error: 'Invalid additional image URL format'
+          });
+        }
+      }
+    }
+
+    // Validate specifications format if provided
+    if (specifications && Array.isArray(specifications)) {
+      for (const spec of specifications) {
+        if (!spec.key || !spec.value) {
+          return res.status(400).json({
+            success: false,
+            message: 'Each specification must have both key and value',
+            error: 'Invalid specification format'
+          });
+        }
+      }
+    }
+
     // Validate attributes format if provided
     if (attributes && Array.isArray(attributes)) {
       for (const attr of attributes) {
@@ -405,13 +572,43 @@ router.put('/:id', verifyAdminToken, async (req, res) => {
       }
     }
 
+    // Validate productUrl if provided
+    if (productUrl) {
+      const urlRegex = /^https?:\/\/.+/;
+      if (!urlRegex.test(productUrl)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product URL must be a valid URL starting with http:// or https://',
+          error: 'Invalid product URL format'
+        });
+      }
+    }
+
+    // Validate vendorSite if provided (now accepts vendor names like Flipkart, Amazon, etc.)
+    if (vendorSite && (vendorSite.length < 2 || vendorSite.length > 100)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vendor site name must be between 2 and 100 characters',
+        error: 'Invalid vendor site name length'
+      });
+    }
+
     const updateData = {};
     if (title) updateData.title = title;
     if (mrp !== undefined) updateData.mrp = parseFloat(mrp);
     if (srp !== undefined) updateData.srp = parseFloat(srp);
     if (description !== undefined) updateData.description = description;
+    if (shortDescription !== undefined) updateData.shortDescription = shortDescription;
+    if (detailedDescription !== undefined) updateData.detailedDescription = detailedDescription;
+    if (features) updateData.features = features;
+    if (specifications) updateData.specifications = specifications;
+    if (highlights) updateData.highlights = highlights;
+    if (mainImage) updateData.mainImage = mainImage;
+    if (additionalImages) updateData.additionalImages = additionalImages;
     if (attributes) updateData.attributes = attributes;
     if (keywords) updateData.keywords = keywords;
+    if (productUrl !== undefined) updateData.productUrl = productUrl;
+    if (vendorSite !== undefined) updateData.vendorSite = vendorSite;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const product = await Product.findByIdAndUpdate(
@@ -438,8 +635,17 @@ router.put('/:id', verifyAdminToken, async (req, res) => {
           mrp: product.mrp,
           srp: product.srp,
           description: product.description,
+          mainImage: product.mainImage,
+          additionalImages: product.additionalImages,
+          shortDescription: product.shortDescription,
+          detailedDescription: product.detailedDescription,
+          features: product.features,
+          specifications: product.specifications,
+          highlights: product.highlights,
           attributes: product.attributes,
           keywords: product.keywords,
+          productUrl: product.productUrl,
+          vendorSite: product.vendorSite,
           isActive: product.isActive,
           profitMargin: product.profitMargin,
           createdBy: product.createdBy,
