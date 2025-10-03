@@ -151,6 +151,12 @@ const productSchema = new mongoose.Schema({
     ref: 'Category',
     required: [true, 'Subcategory ID is required']
   },
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: false,
+    default: null
+  },
   isActive: {
     type: Boolean,
     default: true
