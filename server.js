@@ -15,6 +15,7 @@ const vendorRoutes = require('./routes/vendor');
 const adminRoutes = require('./routes/admin');
 const productRoutes = require('./routes/products');
 const subcategoryRoutes = require('./routes/subcategories');
+const scrapingRoutes = require('./routes/scraping');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/products', productRoutes);
+app.use('/api/admin/scraping', scrapingRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
 
 // Health check endpoint
@@ -111,11 +113,20 @@ app.get('/', (req, res) => {
         deleteSubcategory: 'POST /api/admin/subcategory/:id/delete',
         getCategorySubcategories: 'GET /api/admin/category/:id/subcategories',
         verify: 'GET /api/admin/verify',
-        createProduct: 'POST /api/admin/products (with mainImage and additionalImages)',
-        getProducts: 'GET /api/admin/products',
+        createProduct: 'POST /api/admin/products (with productUrl, vendorSite, mainImage and additionalImages)',
+        getProducts: 'GET /api/admin/products (with pagination and search)',
         getProduct: 'GET /api/admin/products/:id',
-        updateProduct: 'PUT /api/admin/products/:id (supports image updates)',
-        deleteProduct: 'DELETE /api/admin/products/:id'
+        updateProduct: 'PUT /api/admin/products/:id (full update)',
+        patchProduct: 'PATCH /api/admin/products/:id (partial update)',
+        deleteProduct: 'DELETE /api/admin/products/:id',
+        assignVendor: 'POST /api/admin/products/assign-vendor',
+        startScraping: 'POST /api/admin/scraping/start',
+        updateScraping: 'POST /api/admin/scraping/:id/update',
+        addScrapedProduct: 'POST /api/admin/scraping/:id/add-product',
+        getScrapingSessions: 'GET /api/admin/scraping (with pagination and filters)',
+        getScrapingSession: 'GET /api/admin/scraping/:id',
+        getScrapingStats: 'GET /api/admin/scraping/stats/overview',
+        deleteScrapingSession: 'DELETE /api/admin/scraping/:id'
       },
       subcategories: {
         getSubcategories: 'GET /api/subcategories',

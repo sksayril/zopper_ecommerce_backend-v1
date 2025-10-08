@@ -48,6 +48,20 @@ const productSchema = new mongoose.Schema({
     trim: true,
     maxlength: [5000, 'Detailed description cannot exceed 5000 characters']
   },
+  aiDescription: {
+    type: String,
+    required: false,
+    trim: true,
+    maxlength: [5000, 'AI description cannot exceed 5000 characters'],
+    validate: {
+      validator: function(v) {
+        // Allow undefined/null, but if provided, it must not be an empty string after trim
+        if (v === undefined || v === null) return true;
+        return v.trim().length > 0;
+      },
+      message: 'AI description cannot be an empty string'
+    }
+  },
   features: [{
     type: String,
     trim: true,
@@ -58,13 +72,13 @@ const productSchema = new mongoose.Schema({
       type: String,
       required: true,
       trim: true,
-      maxlength: [50, 'Specification key cannot exceed 50 characters']
+      maxlength: [100, 'Specification key cannot exceed 100 characters']
     },
     value: {
       type: String,
       required: true,
       trim: true,
-      maxlength: [200, 'Specification value cannot exceed 200 characters']
+      maxlength: [2000, 'Specification value cannot exceed 2000 characters']
     }
   }],
   highlights: [{
@@ -77,13 +91,13 @@ const productSchema = new mongoose.Schema({
       type: String,
       required: true,
       trim: true,
-      maxlength: [50, 'Attribute key cannot exceed 50 characters']
+      maxlength: [100, 'Attribute key cannot exceed 100 characters']
     },
     value: {
       type: String,
       required: true,
       trim: true,
-      maxlength: [200, 'Attribute value cannot exceed 200 characters']
+      maxlength: [2000, 'Attribute value cannot exceed 2000 characters']
     }
   }],
   keywords: [{
@@ -108,10 +122,10 @@ const productSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function(v) {
-        // Basic URL validation for additional images
-        return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(v);
+        // More flexible URL validation for additional images (allow protocol-relative URLs and URLs without extensions)
+        return /^(https?:\/\/|\/\/).+/.test(v);
       },
-      message: 'Additional image must be a valid image URL (jpg, jpeg, png, gif, webp, svg)'
+      message: 'Additional image must be a valid URL starting with http://, https://, or //'
     }
   }],
   productUrl: {
@@ -151,6 +165,30 @@ const productSchema = new mongoose.Schema({
     ref: 'Category',
     required: [true, 'Subcategory ID is required']
   },
+  categoryPath: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true
+  }],
+  subcategoryPath: [{
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    slug: {
+      type: String,
+      required: true
+    },
+    level: {
+      type: Number,
+      required: true
+    }
+  }],
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
@@ -178,6 +216,44 @@ const productSchema = new mongoose.Schema({
       trim: true,
       lowercase: true
     }
+  },
+  
+  // Scraping history reference
+  scrapingHistoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ScrapingHistory',
+    required: false,
+    default: null
+  },
+  
+  // Scraping metadata for this specific product
+  scrapingInfo: {
+    wasScraped: {
+      type: Boolean,
+      default: false
+    },
+    scrapedFrom: {
+      platform: {
+        type: String,
+        trim: true,
+        enum: ['flipkart', 'amazon', 'myntra', 'nykaa', 'ajio', 'meesho', 'snapdeal', 'paytm', 'other']
+      },
+      url: {
+        type: String,
+        trim: true,
+        validate: {
+          validator: function(v) {
+            if (!v) return true; // Optional field
+            return /^https?:\/\/.+/.test(v);
+          },
+          message: 'Scraped URL must be a valid URL starting with http:// or https://'
+        }
+      },
+      scrapedAt: {
+        type: Date,
+        default: null
+      }
+    }
   }
 }, {
   timestamps: true
@@ -191,10 +267,31 @@ productSchema.index({ mrp: 1 });
 productSchema.index({ srp: 1 });
 productSchema.index({ categoryId: 1 });
 productSchema.index({ subcategoryId: 1 });
+productSchema.index({ categoryPath: 1 });
+productSchema.index({ 'subcategoryPath._id': 1 });
+productSchema.index({ 'subcategoryPath.level': 1 });
 productSchema.index({ mainImage: 1 });
 productSchema.index({ productUrl: 1 });
 productSchema.index({ vendorSite: 1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ scrapingHistoryId: 1 });
+productSchema.index({ 'scrapingInfo.wasScraped': 1 });
+productSchema.index({ 'scrapingInfo.scrapedFrom.platform': 1 });
+productSchema.index({ 'scrapingInfo.scrapedFrom.scrapedAt': -1 });
+
+// Pre-save middleware to ensure updatedAt is set
+productSchema.pre('save', function(next) {
+  if (this.isModified() && !this.isNew) {
+    this.updatedAt = new Date();
+  }
+  next();
+});
+
+// Pre-update middleware to ensure updatedAt is set on updates
+productSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate', 'findByIdAndUpdate'], function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
 
 // Virtual for profit margin calculation
 productSchema.virtual('profitMargin').get(function() {
