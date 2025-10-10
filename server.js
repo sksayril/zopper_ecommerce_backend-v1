@@ -54,6 +54,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/products', productRoutes);
 app.use('/api/admin/scraping', scrapingRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
+app.use('/api', scrapingRoutes); // For /api/scrape-logs and /api/flipkart/scrape-product
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -127,6 +128,11 @@ app.get('/', (req, res) => {
         getScrapingSession: 'GET /api/admin/scraping/:id',
         getScrapingStats: 'GET /api/admin/scraping/stats/overview',
         deleteScrapingSession: 'DELETE /api/admin/scraping/:id'
+      },
+      scraping: {
+        getScrapeLogs: 'GET /api/scrape-logs (with enhanced product counts and statistics)',
+        createScrapeLog: 'POST /api/scrape-logs (create new scraping log entry)',
+        scrapeFlipkartProduct: 'POST /api/flipkart/scrape-product (scrape single product from Flipkart)'
       },
       subcategories: {
         getSubcategories: 'GET /api/subcategories',
