@@ -877,19 +877,89 @@ router.post('/', verifyAdminToken, async (req, res) => {
 });
 
 // @route   GET /api/admin/products
-// @desc    Admin gets all products with pagination and search
+// @desc    Admin gets all products with pagination, search, and date filtering
 // @access  Private (Admin only)
 router.get('/', verifyAdminToken, async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      search = '',
+      createdFrom,
+      createdTo,
+      updatedFrom,
+      updatedTo
+    } = req.query;
 
     // Build search query
     const searchQuery = {};
+    
+    // Text search
     if (search) {
       searchQuery.$or = [
         { title: { $regex: search, $options: 'i' } },
         { keywords: { $in: [new RegExp(search, 'i')] } }
       ];
+    }
+
+    // Date filtering for creation date
+    if (createdFrom || createdTo) {
+      searchQuery.createdAt = {};
+      if (createdFrom) {
+        const fromDate = new Date(createdFrom);
+        if (isNaN(fromDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid createdFrom date format',
+            error: 'createdFrom must be a valid date (YYYY-MM-DD)'
+          });
+        }
+        searchQuery.createdAt.$gte = fromDate;
+      }
+      if (createdTo) {
+        const toDate = new Date(createdTo);
+        if (isNaN(toDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid createdTo date format',
+            error: 'createdTo must be a valid date (YYYY-MM-DD)'
+          });
+        }
+        // Add one day to include the entire end date
+        const endDate = new Date(toDate);
+        endDate.setDate(endDate.getDate() + 1);
+        searchQuery.createdAt.$lt = endDate;
+      }
+    }
+
+    // Date filtering for update date
+    if (updatedFrom || updatedTo) {
+      searchQuery.updatedAt = {};
+      if (updatedFrom) {
+        const fromDate = new Date(updatedFrom);
+        if (isNaN(fromDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid updatedFrom date format',
+            error: 'updatedFrom must be a valid date (YYYY-MM-DD)'
+          });
+        }
+        searchQuery.updatedAt.$gte = fromDate;
+      }
+      if (updatedTo) {
+        const toDate = new Date(updatedTo);
+        if (isNaN(toDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid updatedTo date format',
+            error: 'updatedTo must be a valid date (YYYY-MM-DD)'
+          });
+        }
+        // Add one day to include the entire end date
+        const endDate = new Date(toDate);
+        endDate.setDate(endDate.getDate() + 1);
+        searchQuery.updatedAt.$lt = endDate;
+      }
     }
 
     // Get products with pagination and populate category/subcategory/scraping history
@@ -965,6 +1035,13 @@ router.get('/', verifyAdminToken, async (req, res) => {
           totalProducts: totalProducts,
           hasNext: page < Math.ceil(totalProducts / limit),
           hasPrev: page > 1
+        },
+        filters: {
+          search: search || null,
+          createdFrom: createdFrom || null,
+          createdTo: createdTo || null,
+          updatedFrom: updatedFrom || null,
+          updatedTo: updatedTo || null
         }
       }
     });
