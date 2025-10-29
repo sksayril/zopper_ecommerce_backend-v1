@@ -9,12 +9,40 @@ Complete Admin Authentication API for E-commerce project using JWT token-based a
 
 ## 📋 Table of Contents
 - [Admin Authentication Endpoints](#admin-authentication-endpoints)
+- [Scheduler Task Management](#scheduler-task-management)
 - [Request/Response Examples](#requestresponse-examples)
 - [Error Handling](#error-handling)
 - [JWT Token Management](#jwt-token-management)
 - [Database Schema](#database-schema)
 - [Testing Guide](#testing-guide)
 - [Security Features](#security-features)
+
+---
+
+## 📅 Scheduler Task Management
+
+### Overview
+The Scheduler Task Management API allows admins to create, manage, and monitor scheduled tasks for product and category operations across different platforms (Flipkart, Amazon, Myntra, 1mg, etc.).
+
+**Base URL:** `http://localhost:5000/api/admin/scheduler`
+
+### Task Types
+- **product**: Tasks related to product operations
+- **category**: Tasks related to category operations
+
+### Supported Platforms
+- flipkart, amazon, myntra, 1mg, nykaa, ajio, meesho, snapdeal, paytm, other
+
+### Task Status
+- **scheduled**: Task is scheduled but not yet started
+- **running**: Task is currently executing
+- **completed**: Task has finished successfully
+- **cancelled**: Task was cancelled before completion
+
+### Result Status
+- **pending**: Task result is not yet determined
+- **passed**: Task completed successfully
+- **failed**: Task failed during execution
 
 ---
 
@@ -2151,6 +2179,343 @@ CLIENT_URL=http://localhost:3000
 
 ---
 
+## 📅 Scheduler Task Management Endpoints
+
+### 1. Create Scheduler Task
+Create a new scheduled task for product or category operations.
+
+**Endpoint:** `POST /api/admin/scheduler/tasks`
+
+**Headers:**
+```
+Authorization: Bearer <admin_jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "taskName": "string (required, max 150 characters)",
+  "taskType": "string (required, 'product' or 'category')",
+  "platform": "string (required, one of: flipkart, amazon, myntra, 1mg, nykaa, ajio, meesho, snapdeal, paytm, other)",
+  "url": "string (optional, valid URL starting with http:// or https://)",
+  "mainCategoryId": "string (optional, valid ObjectId)",
+  "subCategoryId": "string (optional, valid ObjectId)",
+  "subSubCategoryId": "string (optional, valid ObjectId)",
+  "startTime": "string (optional, ISO 8601 date format)",
+  "endTime": "string (optional, ISO 8601 date format)",
+  "status": "string (optional, 'scheduled', 'running', 'completed', 'cancelled')",
+  "resultStatus": "string (optional, 'pending', 'passed', 'failed')",
+  "notes": "string (optional, max 1000 characters)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Scheduler task created successfully",
+  "data": {
+    "task": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "taskName": "Flipkart Shoes Category Crawl",
+      "taskType": "category",
+      "platform": "flipkart",
+      "url": "https://www.flipkart.com/sports-shoes",
+      "mainCategoryId": "64f8a1b2c3d4e5f6a7b8c9d1",
+      "subCategoryId": "64f8a1b2c3d4e5f6a7b8c9d2",
+      "subSubCategoryId": "64f8a1b2c3d4e5f6a7b8c9d3",
+      "categoryPath": ["64f8a1b2c3d4e5f6a7b8c9d1", "64f8a1b2c3d4e5f6a7b8c9d2", "64f8a1b2c3d4e5f6a7b8c9d3"],
+      "schedule": {
+        "startTime": "2024-10-30T10:00:00.000Z",
+        "endTime": "2024-10-30T12:00:00.000Z"
+      },
+      "status": "scheduled",
+      "resultStatus": "pending",
+      "notes": "Morning run for shoes category",
+      "createdBy": {
+        "id": "64f8a1b2c3d4e5f6a7b8c9d4",
+        "name": "Admin User",
+        "email": "admin@example.com"
+      },
+      "createdAt": "2024-10-30T09:30:00.000Z",
+      "updatedAt": "2024-10-30T09:30:00.000Z"
+    }
+  }
+}
+```
+
+**Error Responses:**
+```json
+{
+  "success": false,
+  "message": "taskName, taskType and platform are required",
+  "error": "Missing required fields"
+}
+```
+
+### 2. List Scheduler Tasks
+Retrieve all scheduler tasks with optional filtering and pagination.
+
+**Endpoint:** `GET /api/admin/scheduler/tasks`
+
+**Headers:**
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `platform` (optional): Filter by platform
+- `status` (optional): Filter by task status
+- `resultStatus` (optional): Filter by result status
+- `taskType` (optional): Filter by task type
+- `search` (optional): Search in task names
+- `startFrom` (optional): Filter tasks starting from date (ISO 8601)
+- `startTo` (optional): Filter tasks starting until date (ISO 8601)
+
+**Example Request:**
+```
+GET /api/admin/scheduler/tasks?page=1&limit=20&platform=flipkart&taskType=category&status=scheduled&resultStatus=pending&search=shoes&startFrom=2024-10-30
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Scheduler tasks retrieved successfully",
+  "data": {
+    "tasks": [
+      {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+        "taskName": "Flipkart Shoes Category Crawl",
+        "taskType": "category",
+        "platform": "flipkart",
+        "url": "https://www.flipkart.com/sports-shoes",
+        "mainCategoryId": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d1",
+          "name": "Sports",
+          "slug": "sports"
+        },
+        "subCategoryId": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+          "name": "Shoes",
+          "slug": "shoes"
+        },
+        "subSubCategoryId": {
+          "_id": "64f8a1b2c3d4e5f6a7b8c9d3",
+          "name": "Running Shoes",
+          "slug": "running-shoes"
+        },
+        "categoryPath": ["64f8a1b2c3d4e5f6a7b8c9d1", "64f8a1b2c3d4e5f6a7b8c9d2", "64f8a1b2c3d4e5f6a7b8c9d3"],
+        "schedule": {
+          "startTime": "2024-10-30T10:00:00.000Z",
+          "endTime": "2024-10-30T12:00:00.000Z"
+        },
+        "status": "scheduled",
+        "resultStatus": "pending",
+        "notes": "Morning run for shoes category",
+        "createdBy": {
+          "id": "64f8a1b2c3d4e5f6a7b8c9d4",
+          "name": "Admin User",
+          "email": "admin@example.com"
+        },
+        "createdAt": "2024-10-30T09:30:00.000Z",
+        "updatedAt": "2024-10-30T09:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalItems": 47,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+### 3. Get Single Scheduler Task
+Retrieve details of a specific scheduler task by ID.
+
+**Endpoint:** `GET /api/admin/scheduler/tasks/:id`
+
+**Headers:**
+```
+Authorization: Bearer <admin_jwt_token>
+```
+
+**Path Parameters:**
+- `id` (required): Task ID (24-character hex string)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Scheduler task retrieved successfully",
+  "data": {
+    "task": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "taskName": "Flipkart Shoes Category Crawl",
+      "taskType": "category",
+      "platform": "flipkart",
+      "url": "https://www.flipkart.com/sports-shoes",
+      "mainCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d1",
+        "name": "Sports",
+        "slug": "sports"
+      },
+      "subCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+        "name": "Shoes",
+        "slug": "shoes"
+      },
+      "subSubCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d3",
+        "name": "Running Shoes",
+        "slug": "running-shoes"
+      },
+      "categoryPath": ["64f8a1b2c3d4e5f6a7b8c9d1", "64f8a1b2c3d4e5f6a7b8c9d2", "64f8a1b2c3d4e5f6a7b8c9d3"],
+      "schedule": {
+        "startTime": "2024-10-30T10:00:00.000Z",
+        "endTime": "2024-10-30T12:00:00.000Z"
+      },
+      "status": "scheduled",
+      "resultStatus": "pending",
+      "notes": "Morning run for shoes category",
+      "createdBy": {
+        "id": "64f8a1b2c3d4e5f6a7b8c9d4",
+        "name": "Admin User",
+        "email": "admin@example.com"
+      },
+      "createdAt": "2024-10-30T09:30:00.000Z",
+      "updatedAt": "2024-10-30T09:30:00.000Z"
+    }
+  }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "message": "Scheduler task not found",
+  "error": "Task does not exist"
+}
+```
+
+### 4. Update Scheduler Task
+Update an existing scheduler task including schedule times and status.
+
+**Endpoint:** `PUT /api/admin/scheduler/tasks/:id`
+
+**Headers:**
+```
+Authorization: Bearer <admin_jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters:**
+- `id` (required): Task ID (24-character hex string)
+
+**Request Body:**
+```json
+{
+  "taskName": "string (optional, max 150 characters)",
+  "taskType": "string (optional, 'product' or 'category')",
+  "platform": "string (optional, valid platform)",
+  "url": "string (optional, valid URL or null)",
+  "mainCategoryId": "string (optional, valid ObjectId or null)",
+  "subCategoryId": "string (optional, valid ObjectId or null)",
+  "subSubCategoryId": "string (optional, valid ObjectId or null)",
+  "startTime": "string (optional, ISO 8601 date format or null)",
+  "endTime": "string (optional, ISO 8601 date format or null)",
+  "status": "string (optional, valid status)",
+  "resultStatus": "string (optional, valid result status)",
+  "notes": "string (optional, max 1000 characters)"
+}
+```
+
+**Example Request:**
+```json
+{
+  "taskName": "Flipkart Shoes AM Window",
+  "platform": "flipkart",
+  "startTime": "2024-10-30T09:00:00.000Z",
+  "endTime": "2024-10-30T11:30:00.000Z",
+  "status": "scheduled",
+  "resultStatus": "pending",
+  "notes": "Adjusted time window for better performance"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Scheduler task updated successfully",
+  "data": {
+    "task": {
+      "_id": "64f8a1b2c3d4e5f6a7b8c9d0",
+      "taskName": "Flipkart Shoes AM Window",
+      "taskType": "category",
+      "platform": "flipkart",
+      "url": "https://www.flipkart.com/sports-shoes",
+      "mainCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d1",
+        "name": "Sports",
+        "slug": "sports"
+      },
+      "subCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d2",
+        "name": "Shoes",
+        "slug": "shoes"
+      },
+      "subSubCategoryId": {
+        "_id": "64f8a1b2c3d4e5f6a7b8c9d3",
+        "name": "Running Shoes",
+        "slug": "running-shoes"
+      },
+      "categoryPath": ["64f8a1b2c3d4e5f6a7b8c9d1", "64f8a1b2c3d4e5f6a7b8c9d2", "64f8a1b2c3d4e5f6a7b8c9d3"],
+      "schedule": {
+        "startTime": "2024-10-30T09:00:00.000Z",
+        "endTime": "2024-10-30T11:30:00.000Z"
+      },
+      "status": "scheduled",
+      "resultStatus": "pending",
+      "notes": "Adjusted time window for better performance",
+      "createdBy": {
+        "id": "64f8a1b2c3d4e5f6a7b8c9d4",
+        "name": "Admin User",
+        "email": "admin@example.com"
+      },
+      "createdAt": "2024-10-30T09:30:00.000Z",
+      "updatedAt": "2024-10-30T10:15:00.000Z"
+    }
+  }
+}
+```
+
+**Error Responses:**
+```json
+{
+  "success": false,
+  "message": "Invalid task ID format",
+  "error": "ObjectId must be a 24 character hex string"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Invalid platform",
+  "error": "Platform must be one of: flipkart, amazon, myntra, 1mg, nykaa, ajio, meesho, snapdeal, paytm, other"
+}
+```
+
+---
+
 ## 📝 Notes
 
 - All timestamps are in ISO 8601 format
@@ -2160,6 +2525,16 @@ CLIENT_URL=http://localhost:3000
 - JWT tokens expire after 1 hour
 - Include JWT token in Authorization header for protected routes
 - Token format: `Authorization: Bearer <token>`
+
+### Scheduler Task Notes
+- Task names are limited to 150 characters
+- Platform names are case-insensitive and stored in lowercase
+- Category IDs must be valid MongoDB ObjectIds
+- URL validation requires http:// or https:// protocol
+- End time cannot be earlier than start time
+- Category path is automatically built from main/sub/subSub category IDs
+- All scheduler endpoints require admin authentication
+- Task status and result status are separate fields for better tracking
 
 ---
 

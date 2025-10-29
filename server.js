@@ -16,6 +16,7 @@ const adminRoutes = require('./routes/admin');
 const productRoutes = require('./routes/products');
 const subcategoryRoutes = require('./routes/subcategories');
 const scrapingRoutes = require('./routes/scraping');
+const schedulerRoutes = require('./routes/scheduler');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/vendor', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/products', productRoutes);
 app.use('/api/admin/scraping', scrapingRoutes);
+app.use('/api/admin/scheduler', schedulerRoutes);
 app.use('/api/subcategories', subcategoryRoutes);
 app.use('/api', scrapingRoutes); // For /api/scrape-logs and /api/flipkart/scrape-product
 
